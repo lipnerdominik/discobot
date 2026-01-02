@@ -18,6 +18,9 @@ appsettings.Production.json
 # Deployment configuration (use deploy.ps1.template)
 deploy.ps1
 
+# Build-generated version file
+version.txt
+
 # Build results
 [Dd]ebug/
 [Rr]elease/

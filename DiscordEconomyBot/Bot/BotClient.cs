@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using DiscordEconomyBot.Commands;
 using DiscordEconomyBot.Services;
+using DiscordEconomyBot.Models;
 using Discord.Interactions;
 
 namespace DiscordEconomyBot.Bot;
@@ -17,6 +18,7 @@ public class BotClient
     private readonly EconomyCommands _economyCommands;
     private readonly AdminCommands _adminCommands;
     private readonly ILogger<BotClient> _logger;
+    private readonly DateTime _startTime;
 
     public BotClient(
         DiscordSocketClient client,
@@ -37,10 +39,23 @@ public class BotClient
         _economyCommands = economyCommands;
         _adminCommands = adminCommands;
         _logger = logger;
+        _startTime = DateTime.UtcNow;
 
         _interactions.Log += LogAsync;
 
         SetupEventHandlers();
+    }
+
+    public HealthStatus GetHealthStatus()
+    {
+        return new HealthStatus
+        {
+            Status = _client.ConnectionState == ConnectionState.Connected ? "Healthy" : "Unhealthy",
+            BotUsername = _client.CurrentUser?.Username ?? "Not connected",
+            GuildCount = _client.Guilds?.Count ?? 0,
+            IsConnected = _client.ConnectionState == ConnectionState.Connected,
+            StartTime = _startTime
+        };
     }
 
     private void SetupEventHandlers()
@@ -161,18 +176,55 @@ public class BotClient
         return Task.CompletedTask;
     }
 
-    public async Task StartAsync(string token)
+    public async Task StartAsync(string token, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Connecting to Discord...");
+        
         await _client.LoginAsync(TokenType.Bot, token);
         await _client.StartAsync();
 
-        // Czekaj na zakończenie (zarządzane przez host)
-        await Task.Delay(Timeout.Infinite);
+        _logger.LogInformation("Discord client started, waiting for ready event...");
+
+        // Wait indefinitely or until cancellation is requested
+        try
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+        }
+        catch (TaskCanceledException)
+        {
+            _logger.LogInformation("Bot shutdown requested via cancellation token");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in bot main loop");
+        }
     }
 
     public async Task StopAsync()
     {
-        await _client.StopAsync();
-        await _client.LogoutAsync();
+        _logger.LogInformation("Stopping Discord bot...");
+        
+        try
+        {
+            // Stop and logout from Discord
+            if (_client.ConnectionState == ConnectionState.Connected)
+            {
+                await _client.StopAsync();
+                _logger.LogInformation("Discord client stopped");
+                
+                await _client.LogoutAsync();
+                _logger.LogInformation("Discord client logged out");
+            }
+            else
+            {
+                _logger.LogWarning("Discord client was not connected, skipping stop");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while stopping Discord bot");
+        }
+        
+        _logger.LogInformation("Discord bot stopped successfully");
     }
 }

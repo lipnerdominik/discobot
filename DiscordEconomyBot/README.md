@@ -78,7 +78,8 @@ dotnet restore
    Edytuj plik `appsettings.json` i wpisz token bota:
 ```json
 {
-  "BotToken": "YOUR_BOT_TOKEN_HERE"
+  "BotToken": "YOUR_BOT_TOKEN_HERE",
+  "Urls": "http://0.0.0.0:5000"
 }
 ```
 
@@ -86,6 +87,98 @@ dotnet restore
 ```bash
 dotnet run
 ```
+
+## 🏥 Health Endpoint
+
+Bot udostępnia prosty HTTP endpoint do sprawdzania statusu i wersji:
+
+### Dostępne endpointy:
+
+**`GET /health`** - Sprawdź status bota
+```json
+{
+  "status": "Healthy",
+  "version": "1.0.0-a1b2c3d4",
+  "commitHash": "a1b2c3d4",
+  "botUsername": "YourBotName#1234",
+  "guildCount": 5,
+  "isConnected": true,
+  "startTime": "2024-01-15T10:30:00Z",
+  "uptime": "2.15:30:45"
+}
+```
+
+**`GET /`** - Informacje o bocie
+```json
+{
+  "name": "Discord Economy Bot",
+  "version": "1.0.0-a1b2c3d4",
+  "commitHash": "a1b2c3d4",
+  "status": "Running",
+  "endpoints": [
+    "/health - Bot health and status information"
+  ]
+}
+```
+
+### Użycie:
+
+```bash
+# Lokalne sprawdzenie
+curl http://localhost:5000/health
+
+# Sprawdzenie na serwerze
+curl http://your-server-ip:5000/health
+
+# Sprawdź tylko wersję (z jq)
+curl -s http://your-server-ip:5000/health | jq -r '.version'
+
+# Sprawdź commit hash
+curl -s http://your-server-ip:5000/health | jq -r '.commitHash'
+```
+
+### Format wersji:
+
+Bot automatycznie wykrywa Git commit hash i dodaje go do wersji:
+- **Z Git:** `1.0.0-a1b2c3d4` (ostatnie 8 znaków commit hash)
+- **Bez Git:** `1.0.0-unknown` (jeśli brak pliku version.txt)
+
+Commit hash jest zapisywany w pliku `version.txt` podczas procesu deploymentu przez skrypt `deploy.ps1`.
+
+### Proces deploymentu z weryfikacją wersji:
+
+Skrypt `deploy.ps1` automatycznie:
+1. ✅ Sprawdza czy jesteś w repozytorium Git
+2. ✅ Pobiera aktualny commit hash (8 znaków)
+3. ⚠️ **Ostrzega** jeśli masz niezcommitowane zmiany
+4. ⚠️ **Ostrzega** jeśli ta sama wersja jest już wdrożona
+5. 📝 Tworzy plik `version.txt` z commit hash
+6. 🔨 Buduje projekt (commit hash jest wbudowany w build)
+7. 📦 Uploaduje pliki na serwer
+8. 🏥 Weryfikuje czy wdrożona wersja jest poprawna
+
+### Konfiguracja portu:
+
+Domyślnie bot nasłuchuje na porcie **5000**. Możesz zmienić to w `appsettings.json`:
+
+```json
+{
+  "Urls": "http://0.0.0.0:8080"
+}
+```
+
+Lub przez zmienne środowiskowe:
+```bash
+export ASPNETCORE_URLS="http://0.0.0.0:8080"
+```
+
+### Monitorowanie deploymentu:
+
+Health endpoint jest idealny do:
+- ✅ Weryfikacji czy nowa wersja została wdrożona
+- ✅ Sprawdzenia czy bot jest online i połączony z Discord
+- ✅ Monitorowania uptime'u
+- ✅ Automatycznych health checków w systemach monitorujących (UptimeRobot, Healthchecks.io)
 
 ## 🎮 Komendy użytkownika (Slash Commands)
 

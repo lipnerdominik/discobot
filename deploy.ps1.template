@@ -1,3 +1,7 @@
+# Set UTF-8 encoding for proper emoji display
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -5,27 +9,203 @@ $AppName = "discobot"
 $RemoteUser = "deploy"
 $RemoteHost = "YOUR_SERVER_IP_HERE"
 $RemotePath = "/home/deploy/apps/$AppName"
+$HealthCheckUrl = "http://${RemoteHost}:5000/health"
 
-Write-Host "Building DiscoBot"
+Write-Host "======================================" -ForegroundColor Cyan
+Write-Host "   Discord Economy Bot Deployment" -ForegroundColor Cyan
+Write-Host "======================================" -ForegroundColor Cyan
+Write-Host ""
 
+# Check if we're in a git repository
+try {
+    git rev-parse --git-dir 2>&1 | Out-Null
+} catch {
+    Write-Host "ERROR: Not in a git repository!" -ForegroundColor Red
+    exit 1
+}
 
+# Get current commit hash
+try {
+    $commitHash = git rev-parse --short=8 HEAD
+    Write-Host "Current commit: $commitHash" -ForegroundColor Magenta
+} catch {
+    Write-Host "ERROR: Could not get Git commit hash" -ForegroundColor Red
+    exit 1
+}
+
+# Check for unstaged changes
+$hasUnstagedChanges = $false
+$gitStatus = git status --porcelain
+
+if ($gitStatus) {
+    Write-Host "WARNING: You have uncommitted changes!" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Uncommitted files:" -ForegroundColor Yellow
+    git status --short | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
+    Write-Host ""
+    Write-Host "WARNING: Deploying with uncommitted changes means the version won't match the repository!" -ForegroundColor Yellow
+    Write-Host ""
+    
+    $hasUnstagedChanges = $true
+}
+
+# Check currently deployed version
+Write-Host "Checking currently deployed version..." -ForegroundColor Cyan
+try {
+    $currentDeployed = Invoke-RestMethod -Uri $HealthCheckUrl -Method Get -TimeoutSec 5 -ErrorAction SilentlyContinue
+    
+    if ($currentDeployed -and $currentDeployed.commitHash) {
+        Write-Host "  Currently deployed: $($currentDeployed.commitHash)" -ForegroundColor Gray
+        
+        if ($currentDeployed.commitHash -eq $commitHash -and -not $hasUnstagedChanges) {
+            Write-Host "WARNING: This version ($commitHash) is already deployed!" -ForegroundColor Yellow
+            Write-Host ""
+            
+            $response = Read-Host "Do you want to redeploy the same version? (yes/no)"
+            if ($response -ne "yes" -and $response -ne "y") {
+                Write-Host "Deployment cancelled by user" -ForegroundColor Red
+                exit 0
+            }
+            Write-Host ""
+        } else {
+            Write-Host "  Deploying new version: $commitHash" -ForegroundColor Green
+            Write-Host ""
+        }
+    }
+} catch {
+    Write-Host "  Could not check deployed version (bot may be offline)" -ForegroundColor Gray
+    Write-Host ""
+}
+
+# Create version.txt file with commit hash
+Write-Host "Creating version file..." -ForegroundColor Cyan
+$versionFilePath = Join-Path $PSScriptRoot "DiscordEconomyBot\version.txt"
+Set-Content -Path $versionFilePath -Value $commitHash -NoNewline
+Write-Host "  Version file created: $commitHash" -ForegroundColor Gray
+Write-Host ""
+
+# Build
+Write-Host "Building DiscoBot..." -ForegroundColor Cyan
 dotnet publish `
   -c Release `
   -f net10.0 `
   --no-self-contained `
   -o .\publish
 
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Build failed!" -ForegroundColor Red
+    exit 1
+}
 
-Write-Host "Stopping service..."
-ssh $RemoteUser@$RemoteHost "sudo rc-service $AppName stop"
+Write-Host "Build completed" -ForegroundColor Green
+Write-Host ""
 
-Write-Host "Uploading files..."
+# Verify version.txt was included in build
+$publishedVersionFile = Join-Path $PSScriptRoot "publish\version.txt"
+if (Test-Path $publishedVersionFile) {
+    $publishedHash = Get-Content $publishedVersionFile -Raw
+    Write-Host "Version file included in build: $publishedHash" -ForegroundColor Green
+} else {
+    Write-Host "Warning: version.txt not found in publish output!" -ForegroundColor Yellow
+}
+Write-Host ""
+
+# Stop service with timeout
+Write-Host "Stopping service..." -ForegroundColor Yellow
+ssh $RemoteUser@$RemoteHost "sudo /home/deploy/apps/stopDisco.sh"
+Write-Host ""
+
+# Upload files
+Write-Host "Uploading files..." -ForegroundColor Cyan
 scp -r .\publish\* "${RemoteUser}@${RemoteHost}:${RemotePath}"
+Write-Host ""
 
-Write-Host "Setting permissions..."
-ssh $RemoteUser@$RemoteHost "sudo chown -R deploy:deploy $RemotePath"
+# Start service
+Write-Host "Starting service..." -ForegroundColor Green
+ssh $RemoteUser@$RemoteHost "sudo /home/deploy/apps/startDisco.sh"
+Write-Host ""
 
-Write-Host "Starting service..."
-ssh $RemoteUser@$RemoteHost "sudo rc-service $AppName start"
+# Wait for service to start
+Write-Host "Waiting for service to start..." -ForegroundColor Yellow
+Start-Sleep -Seconds 5
+Write-Host ""
 
-Write-Host "Done."
+# Health check
+Write-Host "Verifying deployment..." -ForegroundColor Cyan
+$maxRetries = 3
+$retryCount = 0
+$deploymentVerified = $false
+
+while ($retryCount -lt $maxRetries -and -not $deploymentVerified) {
+    try {
+        $response = Invoke-RestMethod -Uri $HealthCheckUrl -Method Get -TimeoutSec 10
+        
+        Write-Host ""
+        Write-Host "======================================" -ForegroundColor Green
+        Write-Host "   DEPLOYMENT SUCCESSFUL!" -ForegroundColor Green
+        Write-Host "======================================" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Bot Status:" -ForegroundColor White
+        Write-Host "  Status:       " -NoNewline
+        Write-Host "$($response.status)" -ForegroundColor $(if ($response.status -eq "Healthy") { "Green" } else { "Red" })
+        
+        Write-Host "  Version:      " -NoNewline
+        Write-Host "$($response.version)" -ForegroundColor Cyan
+        
+        Write-Host "  Commit Hash:  " -NoNewline
+        if ($response.commitHash) {
+            Write-Host "$($response.commitHash)" -ForegroundColor Magenta
+            
+            # Verify deployed commit matches local commit
+            if ($response.commitHash -eq $commitHash) {
+                Write-Host "  Deployed commit matches local commit" -ForegroundColor Green
+            } else {
+                Write-Host "  WARNING: Deployed commit ($($response.commitHash)) differs from local ($commitHash)" -ForegroundColor Yellow
+            }
+        } else {
+            Write-Host "unknown" -ForegroundColor Yellow
+        }
+        
+        Write-Host "  Bot Username: " -NoNewline
+        Write-Host "$($response.botUsername)" -ForegroundColor Cyan
+        
+        Write-Host "  Guild Count:  " -NoNewline
+        Write-Host "$($response.guildCount)" -ForegroundColor Cyan
+        
+        Write-Host "  Connected:    " -NoNewline
+        Write-Host "$($response.isConnected)" -ForegroundColor $(if ($response.isConnected) { "Green" } else { "Red" })
+        
+        Write-Host "  Uptime:       " -NoNewline
+        Write-Host "$($response.uptime)" -ForegroundColor Cyan
+        
+        Write-Host ""
+        
+        if ($hasUnstagedChanges) {
+            Write-Host "WARNING: You deployed with uncommitted changes!" -ForegroundColor Yellow
+            Write-Host "   Commit your changes to match the deployed version." -ForegroundColor Yellow
+            Write-Host ""
+        }
+        
+        $deploymentVerified = $true
+        
+    } catch {
+        $retryCount++
+        if ($retryCount -lt $maxRetries) {
+            Write-Host "  Retry $retryCount/$maxRetries..." -ForegroundColor Yellow
+            Start-Sleep -Seconds 3
+        } else {
+            Write-Host ""
+            Write-Host "WARNING: Health check failed after $maxRetries attempts!" -ForegroundColor Yellow
+            Write-Host "Error: $_" -ForegroundColor Red
+            Write-Host ""
+            Write-Host "The service may still be starting. Check manually:" -ForegroundColor Yellow
+            Write-Host "  curl $HealthCheckUrl" -ForegroundColor Cyan
+            Write-Host "  ssh $RemoteUser@$RemoteHost 'sudo rc-service $AppName status'" -ForegroundColor Cyan
+            Write-Host ""
+        }
+    }
+}
+
+Write-Host "======================================" -ForegroundColor Cyan
+Write-Host "   DEPLOYMENT COMPLETE!" -ForegroundColor Cyan
+Write-Host "======================================" -ForegroundColor Cyan
