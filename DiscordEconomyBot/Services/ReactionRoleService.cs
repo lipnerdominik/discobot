@@ -1,5 +1,6 @@
 using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 using DiscordEconomyBot.Data;
 using DiscordEconomyBot.Models;
 
@@ -9,11 +10,13 @@ public class ReactionRoleService
 {
     private readonly JsonDataStore _dataStore;
     private readonly DiscordSocketClient _client;
+    private readonly ILogger<ReactionRoleService> _logger;
 
-    public ReactionRoleService(JsonDataStore dataStore, DiscordSocketClient client)
+    public ReactionRoleService(JsonDataStore dataStore, DiscordSocketClient client, ILogger<ReactionRoleService> logger)
     {
         _dataStore = dataStore;
         _client = client;
+        _logger = logger;
 
         // Subskrybuj wydarzenia reakcji
         _client.ReactionAdded += HandleReactionAdded;
@@ -78,6 +81,7 @@ public class ReactionRoleService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "B³¹d podczas dodawania Reaction Role");
             return (false, $"B³¹d: {ex.Message}");
         }
     }
@@ -118,7 +122,7 @@ public class ReactionRoleService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Nie uda³o siê usun¹æ reakcji: {ex.Message}");
+            _logger.LogWarning(ex, "Nie uda³o siê usun¹æ reakcji z wiadomoœci");
             // Kontynuuj mimo b³êdu - usuñ z bazy danych
         }
 
@@ -160,7 +164,7 @@ public class ReactionRoleService
         var role = guildUser.Guild.GetRole(reactionRole.RoleId);
         if (role == null)
         {
-            Console.WriteLine($"Nie znaleziono roli {reactionRole.RoleId}");
+            _logger.LogWarning("Nie znaleziono roli {RoleId} dla Reaction Role", reactionRole.RoleId);
             return;
         }
 
@@ -168,7 +172,7 @@ public class ReactionRoleService
         if (!guildUser.Roles.Contains(role))
         {
             await guildUser.AddRoleAsync(role);
-            Console.WriteLine($"Dodano rangê {role.Name} u¿ytkownikowi {guildUser.Username}");
+            _logger.LogInformation("Dodano rangê {RoleName} u¿ytkownikowi {Username}", role.Name, guildUser.Username);
         }
     }
 
@@ -206,7 +210,7 @@ public class ReactionRoleService
         if (guildUser.Roles.Contains(role))
         {
             await guildUser.RemoveRoleAsync(role);
-            Console.WriteLine($"Usuniêto rangê {role.Name} u¿ytkownikowi {guildUser.Username}");
+            _logger.LogInformation("Usuniêto rangê {RoleName} u¿ytkownikowi {Username}", role.Name, guildUser.Username);
         }
     }
 }

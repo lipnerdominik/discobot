@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using DiscordEconomyBot.Bot;
 using DiscordEconomyBot.Data;
 using DiscordEconomyBot.Models;
@@ -14,8 +15,6 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        Console.WriteLine("🤖 Discord Economy Bot - Uruchamianie...\n");
-
         var host = Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((context, config) =>
             {
@@ -23,6 +22,12 @@ class Program
                     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                     .AddJsonFile($"appsettings.{context.HostingEnvironment.EnvironmentName}.json", optional: true, reloadOnChange: true)
                     .AddEnvironmentVariables();
+            })
+            .ConfigureLogging((context, logging) =>
+            {
+                logging.ClearProviders();
+                logging.AddConsole();
+                logging.SetMinimumLevel(LogLevel.Information);
             })
             .ConfigureServices((context, services) =>
             {

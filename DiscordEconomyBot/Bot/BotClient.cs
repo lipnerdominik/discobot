@@ -1,5 +1,6 @@
 using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 using DiscordEconomyBot.Commands;
 using DiscordEconomyBot.Services;
 using Discord.Interactions;
@@ -15,6 +16,7 @@ public class BotClient
     private readonly VoiceTrackingService _voiceTrackingService;
     private readonly EconomyCommands _economyCommands;
     private readonly AdminCommands _adminCommands;
+    private readonly ILogger<BotClient> _logger;
 
     public BotClient(
         DiscordSocketClient client,
@@ -24,7 +26,8 @@ public class BotClient
         RoleShopService roleShopService,
         VoiceTrackingService voiceTrackingService,
         EconomyCommands economyCommands,
-        AdminCommands adminCommands)
+        AdminCommands adminCommands,
+        ILogger<BotClient> logger)
     {
         _client = client;
         _interactions = interactions;
@@ -33,6 +36,7 @@ public class BotClient
         _voiceTrackingService = voiceTrackingService;
         _economyCommands = economyCommands;
         _adminCommands = adminCommands;
+        _logger = logger;
 
         _interactions.Log += LogAsync;
 
@@ -51,13 +55,25 @@ public class BotClient
 
     private Task LogAsync(LogMessage log)
     {
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] [{log.Severity}] {log.Source}: {log.Message}");
+        var logLevel = log.Severity switch
+        {
+            LogSeverity.Critical => LogLevel.Critical,
+            LogSeverity.Error => LogLevel.Error,
+            LogSeverity.Warning => LogLevel.Warning,
+            LogSeverity.Info => LogLevel.Information,
+            LogSeverity.Verbose => LogLevel.Debug,
+            LogSeverity.Debug => LogLevel.Trace,
+            _ => LogLevel.Information
+        };
+
+        _logger.Log(logLevel, log.Exception, "[{Source}] {Message}", log.Source, log.Message);
         return Task.CompletedTask;
     }
 
     private async Task ReadyAsync()
     {
-        Console.WriteLine($"Bot zalogowany jako {_client.CurrentUser.Username}#{_client.CurrentUser.Discriminator}");
+        _logger.LogInformation("Bot zalogowany jako {Username}#{Discriminator}", 
+            _client.CurrentUser.Username, _client.CurrentUser.Discriminator);
 
         // Rejestruj moduły slash-komend z DI
         await _interactions.AddModulesAsync(typeof(SlashCommands).Assembly, _services);
@@ -67,6 +83,8 @@ public class BotClient
         {
             await _interactions.RegisterCommandsToGuildAsync(guild.Id);
         }
+        
+        _logger.LogInformation("Zarejestrowano slash-komendy dla {GuildCount} gildii", _client.Guilds.Count);
     }
 
     private async Task HandleInteractionAsync(SocketInteraction interaction)
@@ -78,7 +96,7 @@ public class BotClient
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Błąd interakcji: {ex.Message}");
+            _logger.LogError(ex, "Błąd podczas wykonywania interakcji");
             if (interaction.Type == InteractionType.ApplicationCommand)
             {
                 try { await interaction.GetOriginalResponseAsync(); }
@@ -139,7 +157,7 @@ public class BotClient
 
     private Task UserJoinedAsync(SocketGuildUser user)
     {
-        Console.WriteLine($"Nowy użytkownik dołączył: {user.Username}");
+        _logger.LogInformation("Nowy użytkownik dołączył: {Username}", user.Username);
         return Task.CompletedTask;
     }
 
