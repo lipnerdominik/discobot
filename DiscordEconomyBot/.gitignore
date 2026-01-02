@@ -15,6 +15,9 @@ project.lock.json
 appsettings.Development.json
 appsettings.Production.json
 
+# Deployment configuration (use deploy.ps1.template)
+deploy.ps1
+
 # Build results
 [Dd]ebug/
 [Rr]elease/

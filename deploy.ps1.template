@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 
 $AppName = "discobot"
 $RemoteUser = "deploy"
-$RemoteHost = "127.0.0.1"
+$RemoteHost = "YOUR_SERVER_IP_HERE"
 $RemotePath = "/home/deploy/apps/$AppName"
 
 Write-Host "Building DiscoBot"
