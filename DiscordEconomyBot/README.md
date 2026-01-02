@@ -14,12 +14,49 @@ Bot Discord z systemem ekonomii napisany w C# przy użyciu Discord.Net.
 ## 💎 Sposoby zarabiania monet
 
 - 📝 **Pisanie wiadomości** - 5 monet (cooldown 30s)
+- ⛏️ **Kopanie surowców** - 5-500 monet (cooldown 60s) ⚠️ 15% szans na atak goblina!
+- ✨ **Podwójny drop z górnika** - do 1000 monet! (2 przedmioty naraz)
+- 🎲 **Gra w kubki** - wygraj x2 zakładu! (10-1000 monet)
 - 🎤 **Przebywanie na voice** - 2 monety/minutę
 - 👥 **Zapraszanie użytkowników** - 100 monet
 - 📊 **Udział w ankietach** - 10 monet
 - 🎉 **Uczestnictwo w wydarzeniach** - 50 monet
 - 🎁 **Codzienna nagroda** - 100 monet
 - 🏆 **Osiągnięcia** - 50-1000 monet
+
+### ⚠️ Uwaga przy kopaniu!
+Podczas kopania masz **15% szans** na napotkanie goblina, który ukradnie Ci **70-150 monet**! Upewnij się, że masz wystarczająco monet zanim zaczniesz kopać.
+
+### 👷 System Górnika
+Możesz ulepszać swojego górnika, aby zwiększyć szansę na **podwójny drop** podczas kopania! 
+
+**Poziomy górnika:**
+- **Poziom 1** (500 monet) - 10% szans na podwójny drop
+- **Poziom 2** (1,500 monet) - 20% szans na podwójny drop
+- **Poziom 3** (3,500 monet) - 35% szans na podwójny drop
+- **Poziom 4** (7,500 monet) - 50% szans na podwójny drop
+- **Poziom 5** (15,000 monet) - 70% szans na podwójny drop
+
+Podwójny drop oznacza, że wykopiesz **2 losowe przedmioty** zamiast jednego! Możesz dostać np. 2x żelazo, lub żelazo + kamień, albo nawet 2x diament! 💎💎
+
+### 🎲 Gra w Kubki (Shell Game)
+Klasyczna gra hazardowa! Pod jednym z trzech kubków ukryta jest kulka :red_circle:
+
+**Zasady:**
+1. Postaw zakład od **10 do 1000 monet** używając `/kubki <zakład>`
+2. Bot ukryje kulkę pod jednym z trzech kubków i wyświetli **3 przyciski**
+3. **Kliknij przycisk** z numerem kubka (1️⃣, 2️⃣ lub 3️⃣)
+4. Jeśli zgadniesz, **wygrywasz x2 zakładu**! 🎉
+5. Jeśli nie trafisz, tracisz zakład 😢
+
+**Przykłady:**
+- Zakład: 100 monet → Wygrana: 200 monet (+100 zysku)
+- Zakład: 500 monet → Wygrana: 1000 monet (+500 zysku)
+- Maksymalny zakład: 1000 monet → Możliwa wygrana: 2000 monet! 💰
+
+⏱️ Masz **5 minut** na wybór kubka, w przeciwnym razie sesja wygasa.
+
+✨ **Nowość:** Gra używa interaktywnych przycisków Discord - wystarczy kliknąć!
 
 ## 📋 Wymagania
 
@@ -50,29 +87,56 @@ dotnet restore
 dotnet run
 ```
 
-## 🎮 Komendy użytkownika
+## 🎮 Komendy użytkownika (Slash Commands)
 
 | Komenda | Opis |
 |---------|------|
-| `!saldo` | Sprawdź swoje saldo monet |
-| `!daily` | Odbierz codzienną nagrodę |
-| `!top` | Zobacz ranking najbogatszych |
-| `!sklep` | Zobacz dostępne rangi |
-| `!kup <ID>` | Kup rangę ze sklepu |
-| `!statystyki` | Zobacz swoje statystyki |
-| `!osiagniecia` | Zobacz swoje osiągnięcia |
-| `!pomoc` | Wyświetl listę komend |
+| `/saldo` | Sprawdź swoje saldo monet |
+| `/daily` | Odbierz codzienną nagrodę |
+| `/top` | Zobacz ranking najbogatszych |
+| `/sklep` | Zobacz dostępne rangi |
+| `/kup @Ranga` | Kup rangę ze sklepu (mention rangi) |
+| `/kop` | Wykop surowce (cooldown: 60s) |
+| `/ekwipunek` | Zobacz swój ekwipunek i przedmioty |
+| `/surowce` | Zobacz listę wszystkich surowców |
+| `/sprzedaj <przedmiot> <ilość>` | Sprzedaj przedmiot z ekwipunku |
+| `/sprzedajwszystko` | Sprzedaj wszystkie przedmioty |
+| `/gornik` | Zobacz informacje o ulepszeniach górnika |
+| `/ulepszgornika` | Ulepsz górnika (zwiększa szansę na podwójny drop!) |
+| `/kubki <zakład>` | Zagraj w grę Shell Game - kliknij przycisk aby wybrać kubek! |
+| `/statystyki` | Zobacz swoje statystyki |
+| `/osiagniecia` | Zobacz swoje osiągnięcia |
+| `/pomoc` | Wyświetl listę komend |
 
-## 🔧 Komendy administratora
+## 🔧 Komendy administratora (Slash Commands)
 
 | Komenda | Opis |
 |---------|------|
-| `!admin dodajmonety <@user> <ilość>` | Dodaj monety użytkownikowi |
-| `!admin usunmonety <@user> <ilość>` | Usuń monety użytkownikowi |
-| `!admin dodajrange <ID> <cena> <opis>` | Dodaj rangę do sklepu |
-| `!admin usunrange <ID>` | Usuń rangę ze sklepu |
-| `!admin wydarzenie <@users>` | Przyznaj nagrody za wydarzenie |
-| `!admin pomoc` | Wyświetl listę komend admina |
+| `/admin dodajmonety @użytkownik <ilość>` | Dodaj monety użytkownikowi |
+| `/admin usunmonety @użytkownik <ilość>` | Usuń monety użytkownikowi |
+| `/admin dodajrange @Ranga <cena> [opis]` | Dodaj rangę do sklepu (mention rangi) |
+| `/admin usunrange @Ranga` | Usuń rangę ze sklepu (mention rangi) |
+| `/admin wydarzenie @użytkownicy` | Przyznaj nagrody za wydarzenie (do 5 osób) |
+| `/admin pomoc` | Wyświetl listę komend admina |
+
+**Uwaga:** Komendy administratorskie są dostępne tylko dla użytkowników z uprawnieniami **Administrator** na serwerze.
+
+## 🎮 Komendy tekstowe (Legacy - opcjonalne)
+
+Bot nadal wspiera tradycyjne komendy tekstowe z prefiksem `!`:
+
+**Użytkownik:**
+- `!saldo`, `!daily`, `!top`, `!sklep`, `!kup <ID>`, `!kop`, `!ekwipunek`, `!surowce`, `!sprzedaj <przedmiot> <ilość>`, `!sprzedajwszystko`, `!statystyki`, `!osiagniecia`, `!pomoc`
+
+**Administrator:**
+- `!admin dodajmonety <@user> <ilość>`
+- `!admin usunmonety <@user> <ilość>`
+- `!admin dodajrange <ID> <cena> <opis>`
+- `!admin usunrange <ID>`
+- `!admin wydarzenie <@users>`
+- `!admin pomoc`
+
+**Uwaga:** Komendy tekstowe nadal używają ID zamiast mention rangi. Zalecamy używanie komend slash dla lepszego doświadczenia.
 
 ## ⚙️ Konfiguracja
 
@@ -106,8 +170,9 @@ DiscordEconomyBot/
 ├── Bot/
 │   └── BotClient.cs          # Główny klient bota
 ├── Commands/
-│   ├── EconomyCommands.cs    # Komendy ekonomiczne
-│   └── AdminCommands.cs      # Komendy administracyjne
+│   ├── SlashCommands.cs      # Komendy slash (nowoczesne)
+│   ├── EconomyCommands.cs    # Komendy ekonomiczne (legacy)
+│   └── AdminCommands.cs      # Komendy administracyjne (legacy)
 ├── Services/
 │   ├── EconomyService.cs     # Logika ekonomii
 │   ├── RoleShopService.cs    # Sklep z rangami
@@ -129,6 +194,7 @@ Bot zapisuje dane w plikach JSON w folderze `data/`:
 - `users.json` - salda i statystyki użytkowników
 - `roles.json` - rangi dostępne w sklepie
 - `transactions.json` - historia transakcji
+- `inventories.json` - ekwipunki użytkowników (wykopane surowce)
 
 ## ☁️ Darmowy hosting
 
@@ -182,7 +248,7 @@ Bot można hostować za darmo na różnych platformach:
 
 Wygeneruj link zaproszenia w Developer Portal:
 1. Zakładka "OAuth2" → "URL Generator"
-2. Scopes: `bot` oraz (opcjonalnie) `applications.commands` jeśli chcesz slash-komendy
+2. Scopes: **`bot`** oraz **`applications.commands`** (wymagane dla slash commands)
 3. Bot Permissions (minimum do działania ekonomii i sklepu):
    - Manage Roles
    - Read Messages/View Channels
@@ -192,13 +258,13 @@ Wygeneruj link zaproszenia w Developer Portal:
    - Add Reactions
 4. Skopiuj wygenerowany URL i otwórz w przeglądarce
 
-Uwaga: Nie używaj opcji "User Install" ani zakresów dla instalacji użytkownika. Ten bot jest typem `bot` i wymaga zaproszenia na serwer z zakresem `bot`. Wybranie niewłaściwych zakresów powoduje błąd o nieodpowiednich zakresach.
+**Ważne:** Bot używa slash commands, więc **musisz** zaznaczyć scope `applications.commands` podczas generowania linku zaproszenia!
 
 ## 🛠️ Rozbudowa
 
 Bot jest zaprojektowany z myślą o łatwej rozbudowie:
 - Dodaj nowe źródła monet w `EconomyService`
-- Stwórz nowe komendy w `Commands/`
+- Stwórz nowe komendy w `Commands/SlashCommands.cs`
 - Dodaj nowe modele w `Models/`
 - Rozbuduj system osiągnięć w `EconomyConfig`
 
@@ -213,7 +279,8 @@ Jeśli masz pytania lub problemy:
 2. Upewnij się, że bot ma odpowiednie uprawnienia
 3. Sprawdź czy token jest prawidłowy
 4. Zweryfikuj czy włączone są Intents w Developer Portal
-5. Jeśli pojawia się błąd z zakresami, upewnij się, że w **OAuth2 URL Generator** wybrano tylko `bot` (i ewentualnie `applications.commands`) — bez zakresów instalacji użytkownika.
+5. Upewnij się, że w **OAuth2 URL Generator** zaznaczono zarówno `bot` jak i `applications.commands`
+6. Jeśli komendy nie pojawiają się, zrestartuj bota - slash commands rejestrują się przy starcie
 
 ## 🎉 Miłego używania!
 

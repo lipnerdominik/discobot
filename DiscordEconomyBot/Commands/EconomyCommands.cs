@@ -72,7 +72,7 @@ public class EconomyCommands
         }
         catch (Exception ex)
         {
-            await message.Channel.SendMessageAsync($"❌ Wystąpił błąd: {ex.Message}");
+            await message.Channel.SendMessageAsync($":x: Wystąpił błąd: {ex.Message}");
         }
     }
 
@@ -81,7 +81,7 @@ public class EconomyCommands
         var balance = _economyService.GetBalance(user.Id);
         var embed = new EmbedBuilder()
             .WithColor(Color.Gold)
-            .WithTitle("💰 Saldo")
+            .WithTitle(":moneybag: Saldo")
             .WithDescription($"{user.Mention}, masz **{balance}** monet!")
             .WithThumbnailUrl(user.GetAvatarUrl() ?? user.GetDefaultAvatarUrl())
             .WithCurrentTimestamp()
@@ -95,7 +95,7 @@ public class EconomyCommands
         var (success, msg) = _economyService.ClaimDaily(user.Id);
         var embed = new EmbedBuilder()
             .WithColor(success ? Color.Green : Color.Orange)
-            .WithTitle(success ? "🎁 Codzienna nagroda" : "⏰ Zbyt wcześnie")
+            .WithTitle(success ? ":gift: Codzienna nagroda" : ":clock: Zbyt wcześnie")
             .WithDescription(msg)
             .Build();
 
@@ -108,7 +108,7 @@ public class EconomyCommands
 
         var embed = new EmbedBuilder()
             .WithColor(Color.Purple)
-            .WithTitle("🏆 Top 10 Najbogatszych")
+            .WithTitle(":trophy: Top 10 Najbogatszych")
             .WithDescription("Ranking użytkowników według salda monet")
             .WithCurrentTimestamp();
 
@@ -116,14 +116,14 @@ public class EconomyCommands
         {
             var medal = i switch
             {
-                0 => "🥇",
-                1 => "🥈",
-                2 => "🥉",
+                0 => ":first_place:",
+                1 => ":second_place:",
+                2 => ":third_place:",
                 _ => $"{i + 1}."
             };
 
             embed.AddField($"{medal} {topUsers[i].Username}",
-                $"💰 {topUsers[i].Balance} monet",
+                $":moneybag: {topUsers[i].Balance} monet",
                 inline: false);
         }
 
@@ -136,23 +136,23 @@ public class EconomyCommands
 
         if (!roles.Any())
         {
-            await message.Channel.SendMessageAsync("🛒 Sklep jest obecnie pusty!");
+            await message.Channel.SendMessageAsync(":shopping_cart: Sklep jest obecnie pusty!");
             return;
         }
 
         var embed = new EmbedBuilder()
             .WithColor(Color.Blue)
-            .WithTitle("🛒 Sklep z Rangami")
+            .WithTitle(":shopping_cart: Sklep z Rangami")
             .WithDescription("Użyj `!kup <ID rangi>` aby kupić")
             .WithCurrentTimestamp();
 
         foreach (var role in roles)
         {
             var desc = string.IsNullOrEmpty(role.Description)
-                ? $"💰 Cena: **{role.Price}** monet"
-                : $"{role.Description}\n💰 Cena: **{role.Price}** monet";
+                ? $":moneybag: Cena: **{role.Price}** monet"
+                : $"{role.Description}\n:moneybag: Cena: **{role.Price}** monet";
 
-            embed.AddField($"🎭 {role.RoleName}", desc, inline: false);
+            embed.AddField($":performing_arts: {role.RoleName}", desc, inline: false);
         }
 
         await message.Channel.SendMessageAsync(embed: embed.Build());
@@ -162,20 +162,20 @@ public class EconomyCommands
     {
         if (parts.Length < 2)
         {
-            await message.Channel.SendMessageAsync("❌ Użyj: `!kup <ID rangi>`");
+            await message.Channel.SendMessageAsync(":x: Użyj: `!kup <ID rangi>`");
             return;
         }
 
         if (!ulong.TryParse(parts[1], out var roleId))
         {
-            await message.Channel.SendMessageAsync("❌ Nieprawidłowe ID rangi!");
+            await message.Channel.SendMessageAsync(":x: Nieprawidłowe ID rangi!");
             return;
         }
 
         var (success, msg) = await _roleShopService.BuyRole(user, roleId);
         var embed = new EmbedBuilder()
             .WithColor(success ? Color.Green : Color.Red)
-            .WithTitle(success ? "✅ Zakup udany" : "❌ Błąd zakupu")
+            .WithTitle(success ? ":white_check_mark: Zakup udany" : ":x: Błąd zakupu")
             .WithDescription(msg);
 
         await message.Channel.SendMessageAsync(embed: embed.Build());
@@ -187,16 +187,16 @@ public class EconomyCommands
 
         var embed = new EmbedBuilder()
             .WithColor(Color.Teal)
-            .WithTitle($"📊 Statystyki - {user.Username}")
+            .WithTitle($":bar_chart: Statystyki - {user.Username}")
             .WithThumbnailUrl(user.GetAvatarUrl() ?? user.GetDefaultAvatarUrl())
-            .AddField("💰 Saldo", $"{stats.Balance} monet", inline: true)
-            .AddField("📝 Wiadomości", stats.MessageCount.ToString(), inline: true)
-            .AddField("🎤 Czas na voice", $"{stats.VoiceTime.TotalHours:F1}h", inline: true)
-            .AddField("👥 Zaproszenia", stats.InviteCount.ToString(), inline: true)
-            .AddField("📊 Ankiety", stats.PollParticipation.ToString(), inline: true)
-            .AddField("🎉 Wydarzenia", stats.EventParticipation.ToString(), inline: true)
-            .AddField("📅 Dni aktywności", stats.DaysActive.ToString(), inline: true)
-            .AddField("🏆 Osiągnięcia", stats.Achievements.Count.ToString(), inline: true)
+            .AddField(":moneybag: Saldo", $"{stats.Balance} monet", inline: true)
+            .AddField(":pencil: Wiadomości", stats.MessageCount.ToString(), inline: true)
+            .AddField(":microphone2: Czas na voice", $"{stats.VoiceTime.TotalHours:F1}h", inline: true)
+            .AddField(":busts_in_silhouette: Zaproszenia", stats.InviteCount.ToString(), inline: true)
+            .AddField(":bar_chart: Ankiety", stats.PollParticipation.ToString(), inline: true)
+            .AddField(":tada: Wydarzenia", stats.EventParticipation.ToString(), inline: true)
+            .AddField(":calendar: Dni aktywności", stats.DaysActive.ToString(), inline: true)
+            .AddField(":trophy: Osiągnięcia", stats.Achievements.Count.ToString(), inline: true)
             .WithCurrentTimestamp()
             .Build();
 
@@ -209,9 +209,9 @@ public class EconomyCommands
 
         var embed = new EmbedBuilder()
             .WithColor(Color.Gold)
-            .WithTitle($"🏆 Osiągnięcia - {user.Username}")
+            .WithTitle($":trophy: Osiągnięcia - {user.Username}")
             .WithDescription(stats.Achievements.Any()
-                ? string.Join("\n", stats.Achievements.Select(a => $"✅ {FormatAchievement(a)}"))
+                ? string.Join("\n", stats.Achievements.Select(a => $":white_check_mark: {FormatAchievement(a)}"))
                 : "Brak zdobytych osiągnięć")
             .WithCurrentTimestamp();
 
@@ -222,11 +222,11 @@ public class EconomyCommands
     {
         return key switch
         {
-            "100_messages" => "100 Wiadomości 📝",
-            "500_messages" => "500 Wiadomości 📝✨",
-            "1000_messages" => "1000 Wiadomości 📝🌟",
-            "7_days_active" => "7 Dni Aktywności 🗓️",
-            "30_days_active" => "30 Dni Aktywności 🗓️🌟",
+            "100_messages" => "100 Wiadomości :pencil:",
+            "500_messages" => "500 Wiadomości :pencil::sparkles:",
+            "1000_messages" => "1000 Wiadomości :pencil::star2:",
+            "7_days_active" => "7 Dni Aktywności :calendar:",
+            "30_days_active" => "30 Dni Aktywności :calendar::star2:",
             _ => key
         };
     }
@@ -235,15 +235,15 @@ public class EconomyCommands
     {
         var embed = new EmbedBuilder()
             .WithColor(Color.Blue)
-            .WithTitle("📖 Pomoc - Komendy Ekonomii")
+            .WithTitle(":book: Pomoc - Komendy Ekonomii")
             .WithDescription("Lista dostępnych komend:")
-            .AddField("💰 !saldo", "Sprawdź swoje saldo monet", inline: false)
-            .AddField("🎁 !daily", "Odbierz codzienną nagrodę", inline: false)
-            .AddField("🏆 !top", "Zobacz ranking najbogatszych", inline: false)
-            .AddField("🛒 !sklep", "Zobacz dostępne rangi do kupienia", inline: false)
-            .AddField("🎭 !kup <ID>", "Kup rangę ze sklepu", inline: false)
-            .AddField("📊 !statystyki", "Zobacz swoje statystyki", inline: false)
-            .AddField("🏆 !osiagniecia", "Zobacz swoje osiągnięcia", inline: false)
+            .AddField(":moneybag: !saldo", "Sprawdź swoje saldo monet", inline: false)
+            .AddField(":gift: !daily", "Odbierz codzienną nagrodę", inline: false)
+            .AddField(":trophy: !top", "Zobacz ranking najbogatszych", inline: false)
+            .AddField(":shopping_cart: !sklep", "Zobacz dostępne rangi do kupienia", inline: false)
+            .AddField(":performing_arts: !kup <ID>", "Kup rangę ze sklepu", inline: false)
+            .AddField(":bar_chart: !statystyki", "Zobacz swoje statystyki", inline: false)
+            .AddField(":trophy: !osiagniecia", "Zobacz swoje osiągnięcia", inline: false)
             .WithFooter("Zarabiaj monety pisząc wiadomości, spędzając czas na voice i biorąc udział w życiu serwera!")
             .WithCurrentTimestamp()
             .Build();

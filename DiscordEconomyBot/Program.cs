@@ -50,6 +50,9 @@ class Program
                 services.AddSingleton<EconomyService>();
                 services.AddSingleton<RoleShopService>();
                 services.AddSingleton<VoiceTrackingService>();
+                services.AddSingleton<MiningService>();
+                services.AddSingleton<ShellGameService>();
+                services.AddSingleton<ReactionRoleService>();
 
                 // Komendy
                 services.AddSingleton<Commands.EconomyCommands>();
