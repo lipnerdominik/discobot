@@ -13,6 +13,11 @@ project.lock.json
 
 # Development settings with sensitive data
 appsettings.Development.json
+appsettings.Production.json
+
+# Publish output
+[Pp]ublish/
+deploy.ps1
 
 # Build results
 [Dd]ebug/

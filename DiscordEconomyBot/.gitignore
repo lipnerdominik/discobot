@@ -13,6 +13,7 @@ project.lock.json
 
 # Development settings with sensitive data
 appsettings.Development.json
+appsettings.Production.json
 
 # Build results
 [Dd]ebug/
@@ -26,6 +27,9 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+
+# Publish output
+[Pp]ublish/
 
 # User-specific files
 *.rsuser
